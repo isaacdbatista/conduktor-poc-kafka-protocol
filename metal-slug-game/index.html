@@ -2,13 +2,27 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Operação Chumbo Grosso</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main>
-    <canvas id="game" width="960" height="540"></canvas>
+    <div class="stage">
+      <canvas id="game" width="960" height="540"></canvas>
+      <div class="touch">
+        <div class="dpad" id="dpad" aria-label="Direcional"><span class="dpad-knob"></span></div>
+        <div class="sys">
+          <button type="button" data-key="pause" aria-label="Pausar">II</button>
+        </div>
+        <div class="buttons">
+          <button type="button" class="btn btn-c" data-key="grenade">BOMBA</button>
+          <button type="button" class="btn btn-b" data-key="jump">PULO</button>
+          <button type="button" class="btn btn-a" data-key="shoot">TIRO</button>
+        </div>
+      </div>
+    </div>
+    <p class="rotate-hint">Dica: gire o celular para jogar em tela cheia.</p>
     <p class="help">
       <kbd>←</kbd><kbd>→</kbd> mover · <kbd>↑</kbd> mirar p/ cima · <kbd>↓</kbd> agachar ·
       <kbd>Z</kbd> atirar · <kbd>X</kbd> pular · <kbd>C</kbd> granada · <kbd>P</kbd> pausa · <kbd>Enter</kbd> iniciar

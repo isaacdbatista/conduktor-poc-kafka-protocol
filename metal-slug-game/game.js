@@ -49,16 +49,73 @@ const KEYMAP = {
   KeyC: 'grenade', KeyL: 'grenade', Enter: 'start', KeyP: 'pause', Escape: 'pause',
 };
 const keys = {}, pressed = {};
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+function press(a) {
+  if (!keys[a]) pressed[a] = true;
+  keys[a] = true;
+  initAudio();
+}
+function release(a) { keys[a] = false; }
 addEventListener('keydown', e => {
   const a = KEYMAP[e.code];
   if (!a) return;
   e.preventDefault();
-  if (!keys[a]) pressed[a] = true;
-  keys[a] = true;
-  initAudio();
+  press(a);
 });
-addEventListener('keyup', e => { const a = KEYMAP[e.code]; if (a) keys[a] = false; });
+addEventListener('keyup', e => { const a = KEYMAP[e.code]; if (a) release(a); });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+// Controles de toque: direcional analógico + botões (vários dedos ao mesmo tempo).
+const dpad = document.getElementById('dpad');
+if (dpad) {
+  const knob = dpad.querySelector('.dpad-knob');
+  const DIRS = ['left', 'right', 'up', 'down'];
+  let dpadId = null;
+  const setDpad = e => {
+    const r = dpad.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const dead = r.width * 0.15;
+    const want = {
+      left: dx < -dead, right: dx > dead,
+      up: dy < -dead && Math.abs(dy) > Math.abs(dx) * 0.5,
+      down: dy > dead && Math.abs(dy) > Math.abs(dx) * 0.5,
+    };
+    for (const d of DIRS) want[d] ? press(d) : release(d);
+    const lim = r.width * 0.3, len = Math.hypot(dx, dy) || 1, k = Math.min(1, lim / len);
+    knob.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
+  };
+  const endDpad = e => {
+    if (e.pointerId !== dpadId) return;
+    dpadId = null;
+    DIRS.forEach(release);
+    knob.style.transform = '';
+  };
+  dpad.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    dpadId = e.pointerId;
+    dpad.setPointerCapture(e.pointerId);
+    setDpad(e);
+  });
+  dpad.addEventListener('pointermove', e => { if (e.pointerId === dpadId) setDpad(e); });
+  dpad.addEventListener('pointerup', endDpad);
+  dpad.addEventListener('pointercancel', endDpad);
+}
+for (const btn of document.querySelectorAll('[data-key]')) {
+  const a = btn.dataset.key;
+  const up = () => { release(a); btn.classList.remove('on'); };
+  btn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    btn.setPointerCapture(e.pointerId);
+    btn.classList.add('on');
+    press(a);
+  });
+  btn.addEventListener('pointerup', up);
+  btn.addEventListener('pointercancel', up);
+}
+// Tocar no jogo inicia/recomeça a partida.
+canvas.addEventListener('pointerdown', () => { if (state !== 'play') press(state === 'pause' ? 'pause' : 'start'); });
+canvas.addEventListener('pointerup', () => { release('start'); release('pause'); });
+addEventListener('contextmenu', e => { if (TOUCH) e.preventDefault(); });
 
 // ===== Áudio (sintetizado com WebAudio) =====
 let actx = null, noiseBuf = null;
@@ -948,9 +1005,10 @@ function draw() {
     text('OPERAÇÃO', W / 2, 150, 44, '#fff');
     text('CHUMBO GROSSO', W / 2, 215, 64, '#ffd23f');
     text('um teste inspirado em Metal Slug', W / 2, 260, 18, '#ddd');
-    text('← → mover   ↑ mirar   ↓ agachar   Z atirar   X pular   C granada', W / 2, 340, 16, '#ccc');
+    text(TOUCH ? 'direcional: mover, mirar e agachar · TIRO · PULO · BOMBA'
+      : '← → mover   ↑ mirar   ↓ agachar   Z atirar   X pular   C granada', W / 2, 340, 16, '#ccc');
     text('Liberte os prisioneiros para ganhar armas e bombas!', W / 2, 370, 16, '#7cf');
-    if (Math.floor(time * 2) % 2) text('APERTE ENTER', W / 2, 440, 26, '#fff');
+    if (Math.floor(time * 2) % 2) text(TOUCH ? 'TOQUE PARA COMEÇAR' : 'APERTE ENTER', W / 2, 440, 26, '#fff');
     return;
   }
 
@@ -968,9 +1026,9 @@ function draw() {
   ctx.restore();
   drawHud();
 
-  if (state === 'pause') drawOverlay('PAUSA', 'aperte P para continuar', '#fff');
-  if (state === 'over') drawOverlay('GAME OVER', `pontos: ${G.score} — ENTER para recomeçar`, '#e63946');
-  if (state === 'win') drawOverlay('VITÓRIA!', `pontos: ${G.score} — ENTER para jogar de novo`, '#ffd23f');
+  if (state === 'pause') drawOverlay('PAUSA', TOUCH ? 'toque para continuar' : 'aperte P para continuar', '#fff');
+  if (state === 'over') drawOverlay('GAME OVER', `pontos: ${G.score} — ${TOUCH ? 'toque' : 'ENTER'} para recomeçar`, '#e63946');
+  if (state === 'win') drawOverlay('VITÓRIA!', `pontos: ${G.score} — ${TOUCH ? 'toque' : 'ENTER'} para jogar de novo`, '#ffd23f');
 }
 
 // ===== Loop principal =====

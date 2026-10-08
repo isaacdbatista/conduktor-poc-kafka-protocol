@@ -25,6 +25,10 @@ python3 -m http.server 8000
 | `P` / `Esc` | pausar |
 | `Enter` | iniciar / recomeçar |
 
+No celular aparecem controles de toque: direcional à esquerda (mover, mirar para cima,
+agachar) e botões **TIRO**, **PULO** e **BOMBA** à direita. Toque na tela para começar.
+Com o celular deitado o jogo ocupa a tela inteira e os controles ficam por cima.
+
 ## O que já tem
 
 - Fase com rolagem lateral só para a frente, parallax (montanhas e prédios em ruínas) e plataformas.
